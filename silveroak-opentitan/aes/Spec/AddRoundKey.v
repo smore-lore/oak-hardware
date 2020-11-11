@@ -17,12 +17,20 @@ Require Import Coq.Bool.Bvector Coq.Vectors.VectorDef.
 Require Import Cava.VectorUtils.
 
 Section Spec.
-  Context (nc : nat) (nb : nat).
-  Definition state := t (Bvector nb) nc.
-  Definition key := Bvector nb.
+  (* FIPS 197, 2.1: Word A group of 32 bits that is treated either as a single
+     entity or as an array of 4 bytes. *)
+  Variable bits_per_word : nat.
+  Definition word := (Bvector bits_per_word).
+
+  (* FIPS 197, 2.2: Number of columns (32-bit words) comprising the State.
+     For this standard, Nb = 4. *)
+  Variable nb : nat.
+
+  Definition state := t word nb.
+  Definition key_schedule_round := word.
 
   (* FIPS 197, 5.1.4 AddRoundKey() Transformation *)
-  Definition add_round_key (input : state) (k : key) : state :=
+  Definition add_round_key (input : state) (k : key_schedule_round) : state :=
     map (fun col => BVxor _ col k) input.
 
   Section Properties.
@@ -46,7 +54,7 @@ Section Spec.
         reflexivity. }
     Qed.
 
-    Theorem inverse_add_round_key (x : state) (k : key) :
+    Theorem inverse_add_round_key (x : state) (k : key_schedule_round) :
       add_round_key (add_round_key x k) k = x.
     Proof.
       unfold add_round_key.
